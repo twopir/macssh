@@ -5,6 +5,9 @@
 // % Language	:	C++                                                        
 // %                                                                       
 // % $Log$
+// % Revision 1.3  2002/08/24 10:15:16  chombier
+// % Increased the max file-descriptors count to 256 (was 64)
+// %
 // % Revision 1.2  2001/03/28 14:03:59  chombier
 // % GUSI 2.1.6b2 update
 // %
@@ -99,7 +102,8 @@
 // <Definition of class [[GUSIDescriptorTable]]>=                          
 class GUSIDescriptorTable {
 public:
-	enum { SIZE = 64 };
+//	enum { SIZE = 64 };
+	enum { SIZE = 256 };
 	
 	static GUSIDescriptorTable * 	Instance();
 	
