@@ -5,8 +5,11 @@
 // % Language	:	C++                                                        
 // %                                                                       
 // % $Log$
-// % Revision 1.1  2001/03/07 09:51:19  chombier
-// % Initial revision
+// % Revision 1.2  2001/04/10 16:42:22  chombier
+// % GUSI 2.1.6 update
+// %
+// % Revision 1.1.1.1  2001/03/07 09:51:19  chombier
+// % First Imported.
 // %
 // % Revision 1.1.1.1  2001/03/03 21:51:12  chombier
 // % Initial import
@@ -43,7 +46,8 @@
 #define GUSI_SOURCE
 #define GUSI_INTERNAL
 
-#include "GUSIMTTcp.h"
+#include "GUSIFactory.h"
+#include "GUSINetDB.h"
 #include "GUSIMTNetDB.h"
 #include "GUSIMacFile.h"
 #include "GUSIDiag.h"
@@ -52,15 +56,26 @@
 #include <iomanip.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 // This program does no multithreading, so it just consists of a single loop.
 //                                                                         
 // <Main program for [[TestHTGet]]>=                                       
+void MyIoctl(GUSISocket * s, unsigned long request, ...)
+{
+	va_list arglist;
+	va_start(arglist, request);
+	s->ioctl(request, arglist);
+	va_end(arglist);
+}
+
 void main(int, char ** argv)
 {
+	int val;
 	GUSISocket *  	f;
 	GUSISocket *	s;
 
@@ -78,13 +93,28 @@ void main(int, char ** argv)
 	servent * serv 		= 	GUSINetDB::Instance()->getservbyname("http", "tcp");
 	addr.sin_port		=	serv ? serv->s_port : 80;				
 	s 					=
-		GUSIMTTcpFactory::Instance()->socket(AF_INET, SOCK_STREAM, 0);
+		GUSISocketDomainRegistry::Instance()->socket(AF_INET, SOCK_STREAM, 0);
 
-	if (s->connect(&addr, sizeof(addr))) {
+	val = 1;
+	s->setsockopt(SOL_SOCKET, SO_KEEPALIVE, (char *)&val, sizeof(u_long));
+	s->setsockopt(IPPROTO_TCP, TCP_NODELAY, (char *)&val, sizeof(u_long));
+	MyIoctl(s, FIONBIO, &val);
+	
+	if (s->connect(&addr, sizeof(addr)) && errno!=EINPROGRESS) {
 		cerr << "Error connecting: " << errno << endl;
 		
 		goto killS;
 	}
+	{
+		bool 	w;
+		long	ticks = TickCount();
+		while (!s->select(nil, &w, nil))
+			;
+		ticks = TickCount() - ticks;
+		cerr << "Waiting for " << ticks << " ticks." << endl;
+	}
+	val = 0;
+	MyIoctl(s, FIONBIO, &val);
 
 	s->write("GET ", 4);
 	s->write(argv[2], strlen(argv[2]));
@@ -119,4 +149,6 @@ killF:
 		f->close();
 killS:
 	s->close();
+	
+	exit(0);
 }
