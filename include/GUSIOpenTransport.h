@@ -5,11 +5,17 @@
 // % Language	:	C++                                                        
 // %                                                                       
 // % $Log$
-// % Revision 1.1  2001/03/07 09:50:48  chombier
-// % Initial revision
-// %
-// % Revision 1.1.1.1  2001/03/03 21:50:13  chombier
-// % Initial import
+// % Revision 1.2  2001/03/28 14:04:32  chombier
+// % GUSI 2.1.6b2 update
+// %                                        
+// % Revision 1.21  2001/03/20 08:12:55  neeri                             
+// % Further select repairs                                                
+// %                                                                       
+// % Revision 1.20  2001/03/20 02:35:21  neeri                             
+// % Refined new select() implementation                                   
+// %                                                                       
+// % Revision 1.19  2001/03/09 09:25:21  neeri                             
+// % Fixed select logic bugs, listener queue                               
 // %                                        
 // % Revision 1.18  2001/01/17 08:58:06  neeri                             
 // % Releasing 2.1.4                                                       
@@ -234,6 +240,11 @@ public:
  //                                                                         
  // <Overridden member functions for [[GUSIOTSocket]]>=                     
  virtual int ioctl(unsigned int request, va_list arg);
+ // Before we call [[select]], we check whether there is data currently available and turn
+ // off the data flags otherwise.                                           
+ //                                                                         
+ // <Overridden member functions for [[GUSIOTSocket]]>=                     
+ virtual bool pre_select(bool wantRead, bool wantWrite, bool wantExcept);
  // [[getsockopt]] and [[setsockopt]] are available for a variety of options.
  //                                                                         
  // <Overridden member functions for [[GUSIOTSocket]]>=                     

@@ -5,8 +5,11 @@
 // % Language	:	C++                                                        
 // %                                                                       
 // % $Log$
-// % Revision 1.1  2001/03/07 09:50:40  chombier
-// % Initial revision
+// % Revision 1.2  2001/03/28 14:03:50  chombier
+// % GUSI 2.1.6b2 update
+// %
+// % Revision 1.1.1.1  2001/03/07 09:50:40  chombier
+// % First Imported.
 // %
 // % Revision 1.1.1.1  2001/03/03 21:50:10  chombier
 // % Initial import
@@ -340,8 +343,7 @@ protected:
 	GUSIContext(ThreadID id);	
 	GUSIContext(
 		ThreadEntryProcPtr threadEntry, void *threadParam, 
-		Size stackSize, ThreadOptions options = kCreateIfNeeded, 
-		void **threadResult = nil, ThreadID *threadMade = nil);
+		Size stackSize, ThreadOptions options, void **threadResult, ThreadID *threadMade);
 
 	virtual void SwitchIn();
 	virtual void SwitchOut();
@@ -401,6 +403,7 @@ protected:
 
  static Queue			sContexts;
  static GUSIContext *	sCurrentContext;
+ static bool				sCreatingCurrentContext;
  static bool				sHasThreading;
  static OSErr			sError;
  // The [[GUSIContext]] constructor links the context into the queue of existing
@@ -414,7 +417,7 @@ protected:
  // Destruction of a [[GUSIContext]] requires some cleanup.                 
  //                                                                         
  // <Privatissima of [[GUSIContext]]>=                                      
- ~GUSIContext();
+ virtual ~GUSIContext();
 };
 // [[GUSIContext]] instances are created by instances of [[GUSIContextFactory]].
 //                                                                         
@@ -423,6 +426,7 @@ class GUSIContextFactory {
 public:
 	static GUSIContextFactory *	Instance();
 	static void 				SetInstance(GUSIContextFactory * instance);
+	static void 				DeleteInstance();
 	
 	virtual GUSIContext	* CreateContext(ThreadID id);
 	virtual GUSIContext * CreateContext(
@@ -434,6 +438,11 @@ public:
 protected:
 	GUSIContextFactory();
 };
+// To make it possible to install an alternative [[GUSIContextFactory]], we provide the
+// [[GUSISetupContextFactory()]] hook for overriding;                      
+//                                                                         
+// <Definition of class [[GUSIContextFactory]]>=                           
+extern "C" void GUSISetupContextFactory();
 // Many asynchronous calls take the same style of I/O parameter block and thus
 // can be handled by the same completion procedure. [[StartIO]] prepares   
 // a parameter block for asynchronous I/O; [[FinishIO]] waits for the I/O  
